@@ -8,41 +8,52 @@ return {
         "folke/neodev.nvim",
         "nvim-neotest/nvim-nio"
     },
-    config = function()
-        local dap = require("dap")
-        local dapui = require("dapui")
-        local virtual_text = require("nvim-dap-virtual-text")
-        local dap_go = require("dap-go")
+local dap = require('dap')
 
-        dap.adapters.lldb = {
-            type = 'executable',
-            command = '/opt/homebrew/opt/llvm/bin/lldb-vscode', -- adjust as needed, must be absolute path
-            name = 'lldb'
-        }
+dap.configurations.java = {
+    {
+        type = 'java',
+        request = 'launch',
+        name = 'Launch Java Program'
+    },
+}
 
-        local lldb = {
-            name = "Launch lldb",
-            type = "lldb",      -- matches the adapter
-            request = "launch", -- could also attach to a currently running process
-            program = function()
-                return vim.fn.input(
-                    "Path to executable: ",
-                    vim.fn.getcwd() .. "/",
-                    "file"
-                )
-            end,
-            cwd = "${workspaceFolder}",
-            stopOnEntry = false,
-            args = {},
-            runInTerminal = false,
-        }
+vim.fn.sign_define('DapBreakpoint',
+    {
+        text = '🔴',
+        texthl = 'DapBreakpointSymbol',
+        linehl = 'DapBreakpoint',
+        numhl = 'DapBreakpoint'
+    })
+vim.fn.sign_define('DapStopped',
+    {
+        texthl = 'DapStoppedSymbol',
+        linehl = 'CursorLine',
+        numhl = 'DapBreakpoint'
+    })
 
-        dap.configurations.rust = {
-            lldb
-        }
+vim.keymap.set('n', '<F5>', function() require('dap').continue() end)
+vim.keymap.set('n', '<F10>', function() require('dap').step_over() end)
+vim.keymap.set('n', '<F11>', function() require('dap').step_into() end)
+vim.keymap.set('n', '<F12>', function() require('dap').step_out() end)
+vim.keymap.set('n', '<Leader>b', function() require('dap').toggle_breakpoint() end)
 
-        dapui.setup()
-        virtual_text.setup()
-        dap_go.setup()
-    end
+local dapui = require('dapui')
+dapui.setup()
+
+dap.listeners.before.attach.dapui_config = function()
+    dapui.open()
+end
+dap.listeners.before.launch.dapui_config = function()
+    dapui.open()
+end
+dap.listeners.before.event_terminated.dapui_config = function()
+    --dapui.close()
+end
+dap.listeners.before.event_exited.dapui_config = function()
+    --dapui.close()
+end
+
+vim.keymap.set('n', '<Leader>du', function() dapui.toggle() end)
+
 }
